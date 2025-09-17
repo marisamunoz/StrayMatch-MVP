@@ -5,8 +5,8 @@ Project Overview
 StrayMatch is a mobile chatbot application designed to help animal shelters reduce overcrowding. It allows caregivers to apply as fosters, shelters to log animals needing short term placement, and approved caregivers to be matched with animals. The app also supports reporting lost or stray animals.
 This repository is the official codebase for the UTSA Senior Design 2025 project.
 MVP Scope (Class Deliverable)
-Caregiver questionnaire (chatbot flow)
 
+Caregiver questionnaire (chatbot flow)
 
 - Application system (approved / not approved)
 
