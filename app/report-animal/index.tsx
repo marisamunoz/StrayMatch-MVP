@@ -4,15 +4,15 @@ import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 export default function ReportAnimalScreen() {
@@ -148,7 +148,7 @@ export default function ReportAnimalScreen() {
         Alert.alert(
           'Success!',
           'Animal reported successfully. We\'ll start matching with foster families.',
-          [{ text: 'OK', onPress: () => router.back() }]
+          [{ text: 'OK', onPress: () => router.push('/(tabs)') }]
         );
       }
     } catch (error: any) {
@@ -160,7 +160,7 @@ export default function ReportAnimalScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+      <TouchableOpacity onPress={() => router.push('/(tabs)')}>
           <Text style={styles.backButton}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Report Found Animal</Text>
@@ -286,7 +286,7 @@ export default function ReportAnimalScreen() {
         <Text style={styles.label}>Photos</Text>
         <View style={styles.photoButtons}>
           <TouchableOpacity style={styles.photoButton} onPress={takePhoto}>
-            <Text style={styles.photoButtonText}>Take Photo</Text>
+            <Text style={styles.photoButtonText}> Take Photo</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
             <Text style={styles.photoButtonText}>Choose from Gallery</Text>
@@ -304,7 +304,7 @@ export default function ReportAnimalScreen() {
         <Text style={styles.label}>Location *</Text>
         <TouchableOpacity style={styles.locationButton} onPress={getCurrentLocation}>
           <Text style={styles.locationButtonText}>
-            {location ? ' Location Captured' : ' Capture Current Location'}
+            {location ? ' Location Captured' : 'Capture Current Location'}
           </Text>
         </TouchableOpacity>
         {location && (
