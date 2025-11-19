@@ -133,7 +133,7 @@ export default function ReportAnimalScreen() {
             location_lat: location.latitude,
             location_lng: location.longitude,
             health_status: healthStatus,
-            photos: photos, // For now, storing URIs - in production you'd upload to storage
+            photos: photos, // For now, storing URIs then later we can you'd upload to storage
             status: 'active',
             urgency_level: healthStatus === 'needs_vet' || healthStatus === 'injured' ? 'high' : 'medium',
           },
