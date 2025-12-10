@@ -1,30 +1,46 @@
 import { supabase } from '@/lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function ReportAnimalScreen() {
+  const params = useLocalSearchParams();
+  
   const [loading, setLoading] = useState(false);
-  const [species, setSpecies] = useState<'dog' | 'cat' | 'other' | null>(null);
-  const [size, setSize] = useState<'small' | 'medium' | 'large' | 'extra_large' | null>(null);
-  const [healthStatus, setHealthStatus] = useState<'healthy' | 'injured' | 'sick' | 'needs_vet' | null>(null);
-  const [description, setDescription] = useState('');
-  const [color, setColor] = useState('');
+  
+  // Pre-fill from chat if available
+  const [species, setSpecies] = useState<'dog' | 'cat' | 'other' | null>(
+    (params.species as 'dog' | 'cat' | 'other') || null
+  );
+  const [size, setSize] = useState<'small' | 'medium' | 'large' | 'extra_large' | null>(
+    (params.size as 'small' | 'medium' | 'large' | 'extra_large') || null
+  );
+  const [healthStatus, setHealthStatus] = useState<'healthy' | 'injured' | 'sick' | 'needs_vet' | null>(
+    (params.health_status as 'healthy' | 'injured' | 'sick' | 'needs_vet') || null
+  );
+  const [description, setDescription] = useState(
+    typeof params.description === 'string' ? params.description : ''
+  );
+  const [color, setColor] = useState(
+    typeof params.color === 'string' ? params.color : ''
+  );
   const [breed, setBreed] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+
+
 
   const requestLocationPermission = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -84,6 +100,7 @@ export default function ReportAnimalScreen() {
       setPhotos([...photos, result.assets[0].uri]);
     }
   };
+
 
   const handleSubmit = async () => {
     // Validation

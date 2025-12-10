@@ -153,7 +153,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* Bubble 2: Find Foster Families (Right) */}
-        <Animated.View style={[styles.bubble, bubble2Style]} pointerEvents={menuExpanded ? 'auto' : 'none'}>
+        <Animated.View style={[styles.bubble, bubble3Style]} pointerEvents={menuExpanded ? 'auto' : 'none'}>    
           <TouchableOpacity 
             style={styles.bubbleButton}
             onPress={() => router.push('/foster-application')}
@@ -167,7 +167,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* Bubble 3: Report a Pet (Bottom) */}
-        <Animated.View style={[styles.bubble, bubble3Style]} pointerEvents={menuExpanded ? 'auto' : 'none'}>
+        <Animated.View style={[styles.bubble, bubble2Style]} pointerEvents={menuExpanded ? 'auto' : 'none'}> 
           <TouchableOpacity 
             style={styles.bubbleButton}
             onPress={() => router.push('/report-animal')}
