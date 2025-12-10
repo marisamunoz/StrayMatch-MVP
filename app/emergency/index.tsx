@@ -8,7 +8,6 @@ export default function EmergencyScreen() {
 
   return (
     <View style={styles.container}>
-      
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -19,16 +18,6 @@ export default function EmergencyScreen() {
       </View>
 
       <ScrollView style={styles.content}>
-        {/* Safety Tips */}
-        <View style={styles.tipsSection}>
-          <Text style={styles.tipsTitle}>Safety Tips</Text>
-          <Text style={styles.tipText}>• Do not approach aggressive animals</Text>
-          <Text style={styles.tipText}>• Keep a safe distance from injured animals</Text>
-          <Text style={styles.tipText}>• Never attempt to treat injuries yourself</Text>
-          <Text style={styles.tipText}>• Call professionals for rabies concerns</Text>
-          <Text style={styles.tipText}>• Document location and condition with photos</Text>
-        </View>
-        
         <Text style={styles.warningText}>⚠️ For life-threatening emergencies, call 911 immediately</Text>
 
         {/* Animal Control */}
@@ -67,6 +56,16 @@ export default function EmergencyScreen() {
           >
             <Text style={styles.callButtonText}> Call (210) 207-4738</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Safety Tips */}
+        <View style={styles.tipsSection}>
+          <Text style={styles.tipsTitle}>Safety Tips</Text>
+          <Text style={styles.tipText}>• Do not approach aggressive animals</Text>
+          <Text style={styles.tipText}>• Keep a safe distance from injured animals</Text>
+          <Text style={styles.tipText}>• Never attempt to treat injuries yourself</Text>
+          <Text style={styles.tipText}>• Call professionals for rabies concerns</Text>
+          <Text style={styles.tipText}>• Document location and condition with photos</Text>
         </View>
       </ScrollView>
     </View>
