@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native';
 import { supabase } from '../../lib/supabase';
 
 export default function LoginScreen() {
@@ -78,202 +78,55 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  backButton: {
-    fontSize: 16,
-    color: '#1E90FF', // YOUR BLUE ✅
-    fontWeight: '600',
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000',
-  },
-  headerSubtitle: {
-    fontSize: 11,
-    color: '#999',
-    marginTop: 2,
-  },
-  messagesContainer: {
-    flex: 1,
-  },
-  messagesContent: {
-    padding: 20,
-  },
-  
-  // Initial Screen Styles
-  initialContainer: {
-    flex: 1,
-  },
-  availableBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginBottom: 30,
-  },
-  availableText: {
-    fontSize: 13,
-    color: '#666',
-    fontWeight: '500',
-  },
-  
-  // Quick Actions
-  quickActionsSection: {
-    marginBottom: 40,
-  },
-  quickActionsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 20,
-  },
-  quickActionsGrid: {
-    gap: 16,
-  },
-  quickActionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  quickActionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#E6F3FF', // LIGHT BLUE BACKGROUND ✅
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
   },
-  iconText: {
-    fontSize: 24,
-  },
-  quickActionLabel: {
-    fontSize: 15,
-    color: '#333',
-    fontWeight: '500',
-    flex: 1,
-  },
-  
-  // Initial AI Message
-  initialMessageContainer: {
-    marginTop: 20,
-  },
-  aiAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1E90FF', 
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  aiAvatarText: {
-    fontSize: 20,
-  },
-  initialMessageBubble: {
-    backgroundColor: '#F5F5F5',
-    padding: 16,
-    borderRadius: 16,
-    borderTopLeftRadius: 4,
-    marginBottom: 8,
-  },
-  initialMessageText: {
-    fontSize: 14,
-    color: '#333',
-    lineHeight: 20,
-  },
-  timestamp: {
-    fontSize: 11,
-    color: '#999',
-    marginLeft: 8,
-  },
-
-  // Chat Messages
-  messageBubble: {
-    maxWidth: '80%',
-    padding: 14,
-    borderRadius: 18,
-    marginBottom: 12,
-  },
-  userBubble: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#1E90FF', 
-  },
-  assistantBubble: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
-  },
-  messageText: {
-    fontSize: 15,
-    lineHeight: 21,
-  },
-  userText: {
-    color: '#FFFFFF',
-  },
-  assistantText: {
-    color: '#333',
-  },
-  typingText: {
-    fontSize: 13,
-    color: '#666',
-    marginLeft: 8,
-  },
-
-  // Input Bar
-  inputContainer: {
-    flexDirection: 'row',
-    padding: 20,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-    alignItems: 'center',
+  logo: {
+    width: '70%',
+    height: '25%',
+    marginBottom: 32,
+    alignSelf: 'center',
   },
   input: {
-    flex: 1,
+    width: '90%',
     backgroundColor: '#F8F8F8',
-    borderRadius: 24,
-    paddingHorizontal: 18,
+    borderRadius: 10,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 15,
-    maxHeight: 100,
-    marginRight: 12,
     color: '#333',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    marginBottom: 12,
   },
-  sendButtonIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#1E90FF', 
-    justifyContent: 'center',
+  button: {
+    width: '90%',
+    backgroundColor: '#1E90FF',
+    borderRadius: 10,
+    paddingVertical: 14,
     alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 12,
   },
-  sendIcon: {
-    fontSize: 20,
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  forgotText: {
+    color: '#1E90FF',
+    fontSize: 13,
+    marginBottom: 16,
+  },
+  link: {
+    fontSize: 14,
+    color: '#555',
+  },
+  linkBold: {
+    color: '#1E90FF',
+    fontWeight: '600',
   },
 });
