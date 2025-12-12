@@ -23,6 +23,9 @@ export default function FosterApplicationScreen() {
   const [references, setReferences] = useState('');
   const [hasCriminalHistory, setCriminalHistory] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');  
+  const [address, setAddress] = useState('');
 
   const toggleSpecies = (species: string) => {
     if (preferredSpecies.includes(species)) {
@@ -60,6 +63,9 @@ export default function FosterApplicationScreen() {
         .from('foster_applications')
         .insert([{
           user_id: user.id,
+          full_name: fullName,
+          phoneNumber: phoneNumber,
+          address: address,
           home_type: homeType,
           has_yard: hasYard,
           has_other_pets: hasOtherPets,
@@ -100,6 +106,35 @@ export default function FosterApplicationScreen() {
       </View>
 
       <View style={styles.content}>
+
+        {/* Applicant's Full Name */}
+        <Text style={styles.sectionTitle}>Full Name *</Text>
+        <TextInput
+          style={styles.nameArea}
+          value={fullName}
+          onChangeText={setFullName}
+          placeholder="First and Last name"
+        />
+
+        {/* Applicant's Phone Number */}
+        <Text style={styles.sectionTitle}>Phone Number *</Text>
+        <TextInput
+          style={styles.nameArea}
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+          placeholder="(XXX)-XXX-XXXX"
+        />      
+
+
+        {/* Address */}
+        <Text style={styles.sectionTitle}>Permanent Address *</Text>
+        <TextInput
+          style={styles.nameArea}
+          value={address}
+          onChangeText={setAddress}
+          placeholder="123 Main Street, ST, USA"
+        />            
+
         {/* Home Type */}
         <Text style={styles.sectionTitle}>Home Type *</Text>
         <View style={styles.buttonGroup}>
@@ -181,7 +216,7 @@ export default function FosterApplicationScreen() {
             style={[styles.optionButton, hasCriminalHistory === false && styles.selectedButton]}
             onPress={() => setCriminalHistory(false)}
           >
-            <Text style={[styles.buttonText, hasCriminalHistory === false && styles.selectedText]}>Yes</Text>
+            <Text style={[styles.buttonText, hasCriminalHistory === false && styles.selectedText]}>No</Text>
           </TouchableOpacity>
         </View>
 
@@ -357,5 +392,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  nameArea: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    minHeight: 10,
+    textAlignVertical: 'top',
   },
 });
