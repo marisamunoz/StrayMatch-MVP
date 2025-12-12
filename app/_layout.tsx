@@ -34,6 +34,7 @@ export default function RootLayout() {
         <Stack.Screen name="auth/signup" options={{ headerShown: false }} />
         <Stack.Screen name="auth/forgot-password" options={{ title: 'Reset Password' }} />
         <Stack.Screen name="report-animal/index" options={{ headerShown: false }} />
+        <Stack.Screen name="foster-matches/index" options={{headerShown: false}} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />
