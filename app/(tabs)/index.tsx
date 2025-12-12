@@ -211,7 +211,11 @@ export default function HomeScreen() {
             style={styles.bubbleButton}
             onPress={() => router.push('/foster-matches')}
           >
-            <Text> My Fosters </Text>
+            <Image 
+              source={require('../../assets/images/Fosters-Page.png')}
+              style={styles.centerBubbleIcon}
+              resizeMode="contain"
+            />
           </TouchableOpacity>
         </Animated.View>        
       </View>
@@ -310,6 +314,7 @@ const styles = StyleSheet.create({
   bubbleIcon: {
     width: 260,
     height: 260,
+    resizeMode: 'contain',
   },
   logoutButton: {
     marginHorizontal: 20,
@@ -324,4 +329,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  centerBubbleIcon: {
+    width: 110,
+    height: 110,
+    resizeMode: 'contain',
+  }
 });
