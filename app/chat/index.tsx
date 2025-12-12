@@ -1,17 +1,19 @@
+import { BorderRadius, Colors, Shadows } from '@/constants/Colors';
 import { sendChatMessage } from '@/lib/openai';
 import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 interface Message {
@@ -26,24 +28,25 @@ export default function ChatScreen() {
     {
       id: '1',
       role: 'assistant',
-      content: "Hi! I'm here to help you with the animal you found. First, let me ask is the animal injured or in immediate danger?",
+      content: "Hi! I'm here to help you with the animal you found. First, let me ask - is the animal injured or in immediate danger?",
       timestamp: new Date().toISOString(),
     },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [showQuickActions, setShowQuickActions] = useState(true); // Quick actions button still need to make buttons
+  const [showQuickActions, setShowQuickActions] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    // Create new chat session
     createChatSession();
   }, []);
 
   useEffect(() => {
     // Auto scroll to bottom when new messages arrive
-    scrollViewRef.current?.scrollToEnd({ animated: true });
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
   }, [messages]);
 
   const createChatSession = async () => {
@@ -56,7 +59,7 @@ export default function ChatScreen() {
       .insert([
         {
           user_id: user.id,
-          messages: [messages[0]], // Initial message
+          messages: [messages[0]],
         },
       ])
       .select()
@@ -67,11 +70,10 @@ export default function ChatScreen() {
     }
   };
 
-  const sendMessage = async (messageText?: string) => { // accept optional text
+  const sendMessage = async (messageText?: string) => {
     const textToSend = messageText || input.trim();
     if (!textToSend || loading) return;
 
-    // Hide quick actions after first user message
     if (messages.length === 1) { 
       setShowQuickActions(false);
     }
@@ -83,14 +85,12 @@ export default function ChatScreen() {
       timestamp: new Date().toISOString(),
     };
 
-    // Add user message to UI
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInput('');
     setLoading(true);
 
     try {
-      // Send to OpenAI
       const aiResponse = await sendChatMessage(
         updatedMessages.map(m => ({
           role: m.role,
@@ -98,18 +98,15 @@ export default function ChatScreen() {
         }))
       );
 
-      // Check if AI is ready to transition to report form
       const shouldTransition = aiResponse.includes('{') && aiResponse.includes('"species"');
       
       let displayMessage = aiResponse;
       let extractedData = null;
 
       if (shouldTransition) {
-        // Extract JSON data
         const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           extractedData = JSON.parse(jsonMatch[0]);
-          // Remove JSON from display message
           displayMessage = aiResponse.replace(/\{[\s\S]*\}/, '').trim();
         }
       }
@@ -124,7 +121,6 @@ export default function ChatScreen() {
       const finalMessages = [...updatedMessages, assistantMessage];
       setMessages(finalMessages);
 
-      // Save to database
       if (sessionId) {
         await supabase
           .from('chat_sessions')
@@ -135,14 +131,13 @@ export default function ChatScreen() {
           .eq('id', sessionId);
       }
 
-      // If we have extracted data, navigate to report form
       if (extractedData) {
         setTimeout(() => {
           router.push({
             pathname: '/report-animal',
             params: extractedData,
           });
-        }, 2000); // Give user time to read final message
+        }, 2000);
       }
     } catch (error) {
       console.error('Chat error:', error);
@@ -158,7 +153,6 @@ export default function ChatScreen() {
     }
   };
 
-  // Handle quick action clicks
   const handleQuickAction = (actionText: string) => {
     sendMessage(actionText);
   };
@@ -170,19 +164,22 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={100}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>← Back</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <View>
-          <Text style={styles.headerTitle}>Chat Assistant</Text>
-          <Text style={styles.headerSubtitle}>AI-powered help • Available 24/7</Text>
+        <View style={styles.headerCenter}>
+          <View style={styles.aiIndicator}>
+            <View style={styles.aiDot} />
+            <Text style={styles.headerTitle}>AI Assistant</Text>
+          </View>
+          <Text style={styles.headerSubtitle}>Here to help • Available 24/7</Text>
         </View>
-        <View style={{ width: 50 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       {/* Messages */}
@@ -190,14 +187,15 @@ export default function ChatScreen() {
         ref={scrollViewRef}
         style={styles.messagesContainer}
         contentContainerStyle={styles.messagesContent}
+        showsVerticalScrollIndicator={false}
       >
-        {/* Quick Actions - Needs more info  */}
         {showQuickActions && messages.length === 1 && (
           <>
             <View style={styles.welcomeContainer}>
-              <Text style={styles.welcomeTitle}> Welcome!</Text>
+              <Ionicons name="chatbubbles" size={50} color={Colors.primary} />
+              <Text style={styles.welcomeTitle}>Welcome! 👋</Text>
               <Text style={styles.welcomeText}>
-                I'm here to help you with stray animals. Tap a quick action to start:
+                I'm here to help you with stray animals. Choose a quick action to start, or just type your question below.
               </Text>
             </View>
 
@@ -209,7 +207,7 @@ export default function ChatScreen() {
                   style={styles.quickActionButton}
                   onPress={() => handleQuickAction('I found a stray dog')}
                 >
-                  <Text style={styles.quickActionIcon}></Text>
+                  <Ionicons name="paw" size={24} color={Colors.primary} />
                   <Text style={styles.quickActionText}>Found a dog</Text>
                 </TouchableOpacity>
 
@@ -217,7 +215,7 @@ export default function ChatScreen() {
                   style={styles.quickActionButton}
                   onPress={() => handleQuickAction('I found a stray cat')}
                 >
-                  <Text style={styles.quickActionIcon}></Text>
+                  <Ionicons name="paw" size={24} color={Colors.secondary} />
                   <Text style={styles.quickActionText}>Found a cat</Text>
                 </TouchableOpacity>
 
@@ -225,7 +223,7 @@ export default function ChatScreen() {
                   style={styles.quickActionButton}
                   onPress={() => handleQuickAction('The animal needs medical attention')}
                 >
-                  <Text style={styles.quickActionIcon}></Text>
+                  <Ionicons name="medical" size={24} color={Colors.danger} />
                   <Text style={styles.quickActionText}>Medical help</Text>
                 </TouchableOpacity>
 
@@ -233,7 +231,7 @@ export default function ChatScreen() {
                   style={styles.quickActionButton}
                   onPress={() => handleQuickAction('Where can I take this animal?')}
                 >
-                  <Text style={styles.quickActionIcon}></Text>
+                  <Ionicons name="location" size={24} color={Colors.success} />
                   <Text style={styles.quickActionText}>Where to take?</Text>
                 </TouchableOpacity>
 
@@ -241,7 +239,7 @@ export default function ChatScreen() {
                   style={styles.quickActionButton}
                   onPress={() => handleQuickAction('I want to become a foster')}
                 >
-                  <Text style={styles.quickActionIcon}></Text>
+                  <Ionicons name="heart" size={24} color="#EC4899" />
                   <Text style={styles.quickActionText}>Foster info</Text>
                 </TouchableOpacity>
 
@@ -249,7 +247,7 @@ export default function ChatScreen() {
                   style={styles.quickActionButton}
                   onPress={goToReportForm}
                 >
-                  <Text style={styles.quickActionIcon}></Text>
+                  <Ionicons name="document-text" size={24} color={Colors.textSecondary} />
                   <Text style={styles.quickActionText}>Skip to form</Text>
                 </TouchableOpacity>
               </View>
@@ -266,6 +264,11 @@ export default function ChatScreen() {
               message.role === 'user' ? styles.userBubble : styles.assistantBubble,
             ]}
           >
+            {message.role === 'assistant' && (
+              <View style={styles.assistantAvatar}>
+                <Ionicons name="sparkles" size={16} color={Colors.primary} />
+              </View>
+            )}
             <Text
               style={[
                 styles.messageText,
@@ -279,10 +282,17 @@ export default function ChatScreen() {
 
         {loading && (
           <View style={[styles.messageBubble, styles.assistantBubble]}>
-            <ActivityIndicator color="#1E90FF" />
-            <Text style={styles.typingText}>Typing...</Text>
+            <View style={styles.assistantAvatar}>
+              <Ionicons name="sparkles" size={16} color={Colors.primary} />
+            </View>
+            <View style={styles.typingContainer}>
+              <ActivityIndicator size="small" color={Colors.primary} />
+              <Text style={styles.typingText}>Thinking...</Text>
+            </View>
           </View>
         )}
+        
+        <View style={{ height: 20 }} />
       </ScrollView>
 
       {/* Input */}
@@ -292,7 +302,7 @@ export default function ChatScreen() {
           value={input}
           onChangeText={setInput}
           placeholder="Type your message..."
-          placeholderTextColor="#999"
+          placeholderTextColor={Colors.textSecondary}
           multiline
           maxLength={500}
           editable={!loading}
@@ -302,7 +312,11 @@ export default function ChatScreen() {
           onPress={() => sendMessage()}
           disabled={!input.trim() || loading}
         >
-          <Text style={styles.sendButtonText}>Send</Text>
+          <Ionicons 
+            name="send" 
+            size={20} 
+            color={Colors.card} 
+          />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -312,7 +326,7 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -321,25 +335,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    backgroundColor: Colors.card,
+    ...Shadows.sm,
+    zIndex: 10,
   },
   backButton: {
-    fontSize: 16,
-    color: '#1E90FF',
-    fontWeight: '600',
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerCenter: {
+    alignItems: 'center',
+  },
+  aiIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  aiDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.success,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
-    textAlign: 'center',
+    color: Colors.text,
   },
   headerSubtitle: {
-    fontSize: 11,
-    color: '#666',
-    textAlign: 'center',
+    fontSize: 12,
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   messagesContainer: {
@@ -347,39 +374,33 @@ const styles = StyleSheet.create({
   },
   messagesContent: {
     padding: 20,
+    paddingBottom: 40,
   },
-  
-  // Welcome Container
   welcomeContainer: {
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
     alignItems: 'center',
+    marginBottom: 32,
+    padding: 20,
   },
   welcomeTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: Colors.text,
+    marginTop: 16,
     marginBottom: 8,
   },
   welcomeText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 16,
+    color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 24,
   },
-  
-  // Quick Actions
   quickActionsContainer: {
     marginBottom: 20,
   },
   quickActionsTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: Colors.text,
     marginBottom: 16,
   },
   quickActionsGrid: {
@@ -388,94 +409,101 @@ const styles = StyleSheet.create({
   quickActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 18,
-    borderRadius: 12,
+    backgroundColor: Colors.card,
+    padding: 16,
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  quickActionIcon: {
-    fontSize: 28,
-    marginRight: 16,
-    width: 40,
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
   quickActionText: {
-    fontSize: 15,
-    color: '#333',
-    fontWeight: '500',
+    fontSize: 16,
+    color: Colors.text,
+    fontWeight: '600',
     flex: 1,
+    marginLeft: 12,
   },
-  
-  // Chat Messages
   messageBubble: {
-    maxWidth: '80%',
-    padding: 14,
-    borderRadius: 18,
-    marginBottom: 12,
+    maxWidth: '85%',
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 16,
+    flexDirection: 'row',
+    gap: 12,
   },
   userBubble: {
     alignSelf: 'flex-end',
-    backgroundColor: '#1E90FF',
+    backgroundColor: Colors.primary,
+    borderBottomRightRadius: 4,
   },
   assistantBubble: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    backgroundColor: Colors.card,
+    borderBottomLeftRadius: 4,
+    ...Shadows.sm,
+  },
+  assistantAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   messageText: {
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 24,
+    flex: 1,
   },
   userText: {
-    color: '#FFFFFF',
+    color: Colors.card,
   },
   assistantText: {
-    color: '#000000',
+    color: Colors.text,
+  },
+  typingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   typingText: {
     fontSize: 14,
-    color: '#666',
-    marginLeft: 8,
+    color: Colors.textSecondary,
+    fontStyle: 'italic',
   },
-  
-  // Input Bar
   inputContainer: {
     flexDirection: 'row',
-    padding: 15,
-    backgroundColor: '#FFFFFF',
+    padding: 16,
+    backgroundColor: Colors.card,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: Colors.border,
     alignItems: 'flex-end',
+    paddingBottom: Platform.OS === 'ios' ? 32 : 16,
   },
   input: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    backgroundColor: Colors.background,
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     fontSize: 16,
     maxHeight: 100,
     marginRight: 10,
+    color: Colors.text,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   sendButton: {
-    backgroundColor: '#1E90FF',
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    width: 44,
+    height: 44,
+    backgroundColor: Colors.primary,
+    borderRadius: 22,
     justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadows.sm,
   },
   sendButtonDisabled: {
-    backgroundColor: '#CCC',
-  },
-  sendButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    backgroundColor: Colors.textSecondary,
+    opacity: 0.5,
   },
 });

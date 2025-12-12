@@ -1,24 +1,34 @@
+import { LoadingAnimation } from '@/components/ui/LoadingAnimation';
+import { SelectableChip } from '@/components/ui/SelectableChip';
+import { BorderRadius, Colors, Shadows } from '@/constants/Colors';
 import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+
+const blurhash = 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH';
 
 export default function ReportAnimalScreen() {
   const params = useLocalSearchParams();
   
+  const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
   
   // Pre-fill from chat if available
   const [species, setSpecies] = useState<'dog' | 'cat' | 'other' | null>(
@@ -41,29 +51,57 @@ export default function ReportAnimalScreen() {
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
 
+  // Auto-request location on mount and show loading animation
+  useEffect(() => {
+    // Show cute animation for 2.5 seconds
+    const timer = setTimeout(() => {
+      setInitialLoading(false);
+    }, 2500);
 
-  const requestLocationPermission = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Location permission is required to report animals');
-      return false;
+    requestAndGetLocation();
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const requestAndGetLocation = async () => {
+    setLocationLoading(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const currentLocation = await Location.getCurrentPositionAsync({});
+        setLocation({
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (error) {
+      console.log('Location error:', error);
+    } finally {
+      setLocationLoading(false);
     }
-    return true;
   };
 
   const getCurrentLocation = async () => {
-    const hasPermission = await requestLocationPermission();
-    if (!hasPermission) return;
-
+    setLocationLoading(true);
     try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Location permission is required to report animals');
+        setLocationLoading(false);
+        return;
+      }
+
       const currentLocation = await Location.getCurrentPositionAsync({});
       setLocation({
         latitude: currentLocation.coords.latitude,
         longitude: currentLocation.coords.longitude,
       });
-      Alert.alert('Success', 'Location captured!');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       Alert.alert('Error', 'Could not get location');
+    } finally {
+      setLocationLoading(false);
     }
   };
 
@@ -81,6 +119,7 @@ export default function ReportAnimalScreen() {
     });
 
     if (!result.canceled && result.assets[0]) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setPhotos([...photos, result.assets[0].uri]);
     }
   };
@@ -97,31 +136,36 @@ export default function ReportAnimalScreen() {
     });
 
     if (!result.canceled && result.assets[0]) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setPhotos([...photos, result.assets[0].uri]);
     }
   };
 
+  const removePhoto = (index: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setPhotos(photos.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async () => {
     // Validation
     if (!species) {
-      Alert.alert('Error', 'Please select a species');
+      Alert.alert('Required Field', 'Please select a species');
       return;
     }
     if (!size) {
-      Alert.alert('Error', 'Please select a size');
+      Alert.alert('Required Field', 'Please select a size');
       return;
     }
     if (!healthStatus) {
-      Alert.alert('Error', 'Please select health status');
+      Alert.alert('Required Field', 'Please select health status');
       return;
     }
     if (!location) {
-      Alert.alert('Error', 'Please capture location');
+      Alert.alert('Required Field', 'Please capture location');
       return;
     }
     if (!description.trim()) {
-      Alert.alert('Error', 'Please add a description');
+      Alert.alert('Required Field', 'Please add a description');
       return;
     }
 
@@ -137,7 +181,7 @@ export default function ReportAnimalScreen() {
       }
 
       // Insert into database
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('found_animals')
         .insert([
           {
@@ -150,7 +194,7 @@ export default function ReportAnimalScreen() {
             location_lat: location.latitude,
             location_lng: location.longitude,
             health_status: healthStatus,
-            photos: photos, // For now, storing URIs then later we can upload to storage
+            photos: photos,
             status: 'active',
             urgency_level: healthStatus === 'needs_vet' || healthStatus === 'injured' ? 'high' : 'medium',
           },
@@ -160,314 +204,454 @@ export default function ReportAnimalScreen() {
       setLoading(false);
 
       if (error) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         Alert.alert('Error', error.message);
       } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert(
-          'Success!',
+          'Success! 🎉',
           'Animal reported successfully. We\'ll start matching with foster families.',
-          [{ text: 'OK', onPress: () => router.push('/(tabs)') }]
+          [{ text: 'OK', onPress: () => router.push('/') }]
         );
       }
     } catch (error: any) {
       setLoading(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', error.message);
     }
   };
 
+  // Show cute loading animation on initial load
+  if (initialLoading) {
+    return <LoadingAnimation message="Preparing to help a stray..." showFunFact={true} />;
+  }
+
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-      <TouchableOpacity onPress={() => router.push('/(tabs)')}>
-          <Text style={styles.backButton}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Report Found Animal</Text>
-      </View>
-
-      {/* Species Selection */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Species *</Text>
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity
-            style={[styles.optionButton, species === 'dog' && styles.selectedButton]}
-            onPress={() => setSpecies('dog')}
-          >
-            <Text style={[styles.optionText, species === 'dog' && styles.selectedText]}>Dog</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.optionButton, species === 'cat' && styles.selectedButton]}
-            onPress={() => setSpecies('cat')}
-          >
-            <Text style={[styles.optionText, species === 'cat' && styles.selectedText]}>Cat</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.optionButton, species === 'other' && styles.selectedButton]}
-            onPress={() => setSpecies('other')}
-          >
-            <Text style={[styles.optionText, species === 'other' && styles.selectedText]}>Other</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Size Selection */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Size *</Text>
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity
-            style={[styles.optionButton, size === 'small' && styles.selectedButton]}
-            onPress={() => setSize('small')}
-          >
-            <Text style={[styles.optionText, size === 'small' && styles.selectedText]}>Small</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.optionButton, size === 'medium' && styles.selectedButton]}
-            onPress={() => setSize('medium')}
-          >
-            <Text style={[styles.optionText, size === 'medium' && styles.selectedText]}>Medium</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.optionButton, size === 'large' && styles.selectedButton]}
-            onPress={() => setSize('large')}
-          >
-            <Text style={[styles.optionText, size === 'large' && styles.selectedText]}>Large</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Health Status */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Health Status *</Text>
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity
-            style={[styles.optionButton, healthStatus === 'healthy' && styles.selectedButton]}
-            onPress={() => setHealthStatus('healthy')}
-          >
-            <Text style={[styles.optionText, healthStatus === 'healthy' && styles.selectedText]}>Healthy</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.optionButton, healthStatus === 'injured' && styles.selectedButton]}
-            onPress={() => setHealthStatus('injured')}
-          >
-            <Text style={[styles.optionText, healthStatus === 'injured' && styles.selectedText]}>Injured</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.optionButton, healthStatus === 'sick' && styles.selectedButton]}
-            onPress={() => setHealthStatus('sick')}
-          >
-            <Text style={[styles.optionText, healthStatus === 'sick' && styles.selectedText]}>Sick</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.optionButton, healthStatus === 'needs_vet' && styles.selectedButton]}
-            onPress={() => setHealthStatus('needs_vet')}
-          >
-            <Text style={[styles.optionText, healthStatus === 'needs_vet' && styles.selectedText]}>Needs Vet</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Color & Breed */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Color (optional)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., Brown and white"
-          value={color}
-          onChangeText={setColor}
-        />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.label}>Breed (optional)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., Labrador mix"
-          value={breed}
-          onChangeText={setBreed}
-        />
-      </View>
-
-      {/* Description */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Description *</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="Describe the animal's appearance, behavior, and where you found them..."
-          value={description}
-          onChangeText={setDescription}
-          multiline
-          numberOfLines={4}
-        />
-      </View>
-
-      {/* Photos */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Photos</Text>
-        <View style={styles.photoButtons}>
-          <TouchableOpacity style={styles.photoButton} onPress={takePhoto}>
-            <Text style={styles.photoButtonText}> Take Photo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
-            <Text style={styles.photoButtonText}>Choose from Gallery</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.photoGrid}>
-          {photos.map((uri, index) => (
-            <Image key={index} source={{ uri }} style={styles.photo} />
-          ))}
-        </View>
-      </View>
-
-      {/* Location */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Location *</Text>
-        <TouchableOpacity style={styles.locationButton} onPress={getCurrentLocation}>
-          <Text style={styles.locationButtonText}>
-            {location ? ' Location Captured' : 'Capture Current Location'}
-          </Text>
-        </TouchableOpacity>
-        {location && (
-          <Text style={styles.locationText}>
-            Lat: {location.latitude.toFixed(6)}, Lng: {location.longitude.toFixed(6)}
-          </Text>
-        )}
-      </View>
-
-      {/* Submit Button */}
-      <TouchableOpacity
-        style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-        onPress={handleSubmit}
-        disabled={loading}
+    <View style={styles.container}>
+      {/* Header */}
+      <Animated.View 
+        entering={FadeInDown.delay(100).springify()}
+        style={styles.header}
       >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.submitButtonText}>Submit Report</Text>
-        )}
-      </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={Colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.headerTitle}>Report Found Animal</Text>
+          <Text style={styles.headerSubtitle}>Help us find them a home</Text>
+        </View>
+        <View style={{ width: 40 }} />
+      </Animated.View>
 
-      <View style={{ height: 40 }} />
-    </ScrollView>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Species Selection */}
+        <Animated.View 
+          entering={FadeInDown.delay(200).springify()}
+          style={styles.section}
+        >
+          <Text style={styles.label}>Species *</Text>
+          <View style={styles.chipGroup}>
+            <SelectableChip
+              label="🐕 Dog"
+              selected={species === 'dog'}
+              onPress={() => setSpecies('dog')}
+            />
+            <SelectableChip
+              label="🐈 Cat"
+              selected={species === 'cat'}
+              onPress={() => setSpecies('cat')}
+            />
+            <SelectableChip
+              label="Other"
+              selected={species === 'other'}
+              onPress={() => setSpecies('other')}
+            />
+          </View>
+        </Animated.View>
+
+        {/* Size Selection */}
+        <Animated.View 
+          entering={FadeInDown.delay(250).springify()}
+          style={styles.section}
+        >
+          <Text style={styles.label}>Size *</Text>
+          <View style={styles.chipGroup}>
+            <SelectableChip
+              label="Small"
+              selected={size === 'small'}
+              onPress={() => setSize('small')}
+            />
+            <SelectableChip
+              label="Medium"
+              selected={size === 'medium'}
+              onPress={() => setSize('medium')}
+            />
+            <SelectableChip
+              label="Large"
+              selected={size === 'large'}
+              onPress={() => setSize('large')}
+            />
+            <SelectableChip
+              label="Extra Large"
+              selected={size === 'extra_large'}
+              onPress={() => setSize('extra_large')}
+            />
+          </View>
+        </Animated.View>
+
+        {/* Health Status */}
+        <Animated.View 
+          entering={FadeInDown.delay(300).springify()}
+          style={styles.section}
+        >
+          <Text style={styles.label}>Health Status *</Text>
+          <View style={styles.chipGroup}>
+            <SelectableChip
+              label="✅ Healthy"
+              selected={healthStatus === 'healthy'}
+              onPress={() => setHealthStatus('healthy')}
+            />
+            <SelectableChip
+              label="🤕 Injured"
+              selected={healthStatus === 'injured'}
+              onPress={() => setHealthStatus('injured')}
+            />
+            <SelectableChip
+              label="🤒 Sick"
+              selected={healthStatus === 'sick'}
+              onPress={() => setHealthStatus('sick')}
+            />
+            <SelectableChip
+              label="🏥 Needs Vet"
+              selected={healthStatus === 'needs_vet'}
+              onPress={() => setHealthStatus('needs_vet')}
+            />
+          </View>
+        </Animated.View>
+
+        {/* Color & Breed */}
+        <Animated.View 
+          entering={FadeInDown.delay(350).springify()}
+          style={styles.section}
+        >
+          <Text style={styles.label}>Color (Optional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., Brown and white"
+            placeholderTextColor={Colors.textSecondary}
+            value={color}
+            onChangeText={setColor}
+          />
+        </Animated.View>
+
+        <Animated.View 
+          entering={FadeInDown.delay(400).springify()}
+          style={styles.section}
+        >
+          <Text style={styles.label}>Breed (Optional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., Labrador mix"
+            placeholderTextColor={Colors.textSecondary}
+            value={breed}
+            onChangeText={setBreed}
+          />
+        </Animated.View>
+
+        {/* Description */}
+        <Animated.View 
+          entering={FadeInDown.delay(450).springify()}
+          style={styles.section}
+        >
+          <Text style={styles.label}>Description *</Text>
+          <TextInput
+            style={styles.textArea}
+            placeholder="Describe the animal's appearance, behavior, and where you found them..."
+            placeholderTextColor={Colors.textSecondary}
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            numberOfLines={5}
+            textAlignVertical="top"
+          />
+        </Animated.View>
+
+        {/* Photos */}
+        <Animated.View 
+          entering={FadeInDown.delay(500).springify()}
+          style={styles.section}
+        >
+          <Text style={styles.label}>Photos</Text>
+          <View style={styles.photoButtonsContainer}>
+            <TouchableOpacity style={styles.photoButton} onPress={takePhoto}>
+              <Ionicons name="camera" size={24} color={Colors.primary} />
+              <Text style={styles.photoButtonText}>Take Photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
+              <Ionicons name="images" size={24} color={Colors.primary} />
+              <Text style={styles.photoButtonText}>Gallery</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {photos.length > 0 && (
+            <View style={styles.photoGrid}>
+              {photos.map((uri, index) => (
+                <View key={index} style={styles.photoContainer}>
+                  <ExpoImage
+                    source={{ uri }}
+                    style={styles.photo}
+                    placeholder={blurhash}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                  <TouchableOpacity
+                    style={styles.removePhotoButton}
+                    onPress={() => removePhoto(index)}
+                  >
+                    <Ionicons name="close-circle" size={28} color={Colors.danger} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+        </Animated.View>
+
+        {/* Location */}
+        <Animated.View 
+          entering={FadeInDown.delay(550).springify()}
+          style={styles.section}
+        >
+          <Text style={styles.label}>Location *</Text>
+          <TouchableOpacity 
+            style={[
+              styles.locationButton,
+              location && styles.locationButtonActive
+            ]} 
+            onPress={getCurrentLocation}
+            disabled={locationLoading}
+          >
+            {locationLoading ? (
+              <ActivityIndicator color={Colors.card} />
+            ) : (
+              <>
+                <Ionicons 
+                  name={location ? "checkmark-circle" : "location"} 
+                  size={24} 
+                  color={Colors.card} 
+                />
+                <Text style={styles.locationButtonText}>
+                  {location ? '✓ Location Captured' : 'Capture Current Location'}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+          {location && (
+            <View style={styles.locationInfo}>
+              <Ionicons name="pin" size={16} color={Colors.textSecondary} />
+              <Text style={styles.locationText}>
+                {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+              </Text>
+            </View>
+          )}
+        </Animated.View>
+
+        {/* Submit Button */}
+        <Animated.View 
+          entering={FadeInDown.delay(600).springify()}
+          style={styles.submitContainer}
+        >
+          <TouchableOpacity
+            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={Colors.card} />
+            ) : (
+              <>
+                <Text style={styles.submitButtonText}>Submit Report</Text>
+                <Ionicons name="checkmark-circle" size={24} color={Colors.card} />
+              </>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   header: {
-    paddingTop: 60,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
+    paddingTop: 60,
     paddingBottom: 20,
+    backgroundColor: Colors.card,
+    ...Shadows.sm,
   },
   backButton: {
-    fontSize: 16,
-    color: '#1E90FF',
-    marginBottom: 10,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  title: {
-    fontSize: 28,
+  headerTextContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
+    color: Colors.text,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 24,
   },
   section: {
-    paddingHorizontal: 20,
-    marginBottom: 25,
+    marginBottom: 28,
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 10,
-    color: '#000',
+    color: Colors.text,
+    marginBottom: 12,
   },
-  buttonGroup: {
+  chipGroup: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-  },
-  optionButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#1E90FF',
-    backgroundColor: '#fff',
-  },
-  selectedButton: {
-    backgroundColor: '#1E90FF',
-  },
-  optionText: {
-    color: '#1E90FF',
-    fontWeight: '600',
-  },
-  selectedText: {
-    color: '#fff',
+    gap: 12,
   },
   input: {
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.md,
+    padding: 16,
+    fontSize: 15,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    borderColor: Colors.border,
+    color: Colors.text,
   },
   textArea: {
-    height: 100,
-    textAlignVertical: 'top',
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.md,
+    padding: 16,
+    fontSize: 15,
+    minHeight: 120,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    color: Colors.text,
   },
-  photoButtons: {
+  photoButtonsContainer: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 15,
+    gap: 12,
+    marginBottom: 16,
   },
   photoButton: {
     flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#1E90FF',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 16,
+    borderRadius: BorderRadius.md,
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.card,
   },
   photoButtonText: {
-    color: '#1E90FF',
+    color: Colors.primary,
     fontWeight: '600',
+    fontSize: 15,
   },
   photoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 12,
+  },
+  photoContainer: {
+    position: 'relative',
+    width: 110,
+    height: 110,
   },
   photo: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
+    width: '100%',
+    height: '100%',
+    borderRadius: BorderRadius.lg,
+  },
+  removePhotoButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: Colors.card,
+    borderRadius: 14,
   },
   locationButton: {
-    padding: 15,
-    borderRadius: 8,
-    backgroundColor: '#1E90FF',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 16,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.primary,
+    ...Shadows.md,
+  },
+  locationButtonActive: {
+    backgroundColor: Colors.success,
   },
   locationButtonText: {
-    color: '#fff',
+    color: Colors.card,
     fontWeight: '600',
     fontSize: 16,
   },
+  locationInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingHorizontal: 4,
+  },
   locationText: {
-    marginTop: 8,
     fontSize: 14,
-    color: '#666',
+    color: Colors.textSecondary,
+    fontFamily: 'monospace',
+  },
+  submitContainer: {
+    marginTop: 8,
   },
   submitButton: {
-    marginHorizontal: 20,
-    padding: 18,
-    borderRadius: 50,
-    backgroundColor: '#1E90FF',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 18,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.success,
+    ...Shadows.lg,
   },
   submitButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: Colors.textSecondary,
   },
   submitButtonText: {
-    color: '#fff',
+    color: Colors.card,
     fontSize: 18,
     fontWeight: 'bold',
   },

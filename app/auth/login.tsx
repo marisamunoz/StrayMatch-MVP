@@ -1,12 +1,14 @@
+import { LoginSuccessAnimation } from '@/components/ui/LoginSuccessAnimation';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native';
+import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -24,9 +26,19 @@ export default function LoginScreen() {
     if (error) {
       Alert.alert('Login Failed', error.message);
     } else {
-      router.replace('/(tabs)');
+      // Show success animation
+      setShowSuccessAnimation(true);
     }
   };
+
+  const handleAnimationComplete = () => {
+    router.replace('/');
+  };
+
+  // Show success animation overlay
+  if (showSuccessAnimation) {
+    return <LoginSuccessAnimation onComplete={handleAnimationComplete} />;
+  }
 
   return (
     <View style={styles.container}>
