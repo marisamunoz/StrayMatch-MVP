@@ -21,6 +21,7 @@ export default function FosterApplicationScreen() {
   const [preferredSize, setPreferredSize] = useState<string[]>([]);
   const [maxAnimals, setMaxAnimals] = useState(1);
   const [references, setReferences] = useState('');
+  const [hasCriminalHistory, setCriminalHistory] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
 
   const toggleSpecies = (species: string) => {
@@ -67,6 +68,7 @@ export default function FosterApplicationScreen() {
           preferred_size: preferredSize,
           max_animals: maxAnimals,
           references: references,
+          has_criminal_history: hasCriminalHistory ?? false,
           status: 'pending',
         }])
         .select();
@@ -165,6 +167,23 @@ export default function FosterApplicationScreen() {
           multiline
           numberOfLines={4}
         />
+
+        {/*Criminal Background*/}
+        <Text style={styles.sectionTitle}>Have you ever been accused of, arrested, or convicted of animal cruelty and/or family violence  *</Text>
+        <View style={styles.buttonGroup}>
+          <TouchableOpacity
+            style={[styles.optionButton, hasCriminalHistory === true && styles.selectedButton]}
+            onPress={() => setCriminalHistory(true)}
+          >
+            <Text style={[styles.buttonText, hasCriminalHistory === true && styles.selectedText]}>Yes</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.optionButton, hasCriminalHistory === false && styles.selectedButton]}
+            onPress={() => setCriminalHistory(false)}
+          >
+            <Text style={[styles.buttonText, hasCriminalHistory === false && styles.selectedText]}>Yes</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Preferred Species */}
         <Text style={styles.sectionTitle}>Preferred Species *</Text>

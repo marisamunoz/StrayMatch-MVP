@@ -22,6 +22,7 @@ export default function HomeScreen() {
   const bubble2 = useSharedValue({ x: 0, y: 0 });
   const bubble3 = useSharedValue({ x: 0, y: 0 });
   const bubble4 = useSharedValue({ x: 0, y: 0 });
+  const bubble5 = useSharedValue({ x: 0, y: 0 });
 
   const handleAnimalTap = () => {
     if (!menuExpanded) {
@@ -39,6 +40,7 @@ export default function HomeScreen() {
       bubble2.value = withSpring({ x: 110, y: 0 });  // Right - Find Foster
       bubble3.value = withSpring({ x: 0, y: 110 });  // Bottom - Report Pet
       bubble4.value = withSpring({ x: -110, y: 0 }); // Left - Emergency
+      bubble5.value = withSpring({ x: 0, y: 0 }); // Center - Matched Animals
       
       setMenuExpanded(true);
     } else {
@@ -50,6 +52,7 @@ export default function HomeScreen() {
       bubble2.value = withSpring({ x: 0, y: 0 });
       bubble3.value = withSpring({ x: 0, y: 0 });
       bubble4.value = withSpring({ x: 0, y: 0 });
+      bubble5.value = withSpring({ x: 0, y: 0 });
       
       setMenuExpanded(false);
     }
@@ -98,6 +101,14 @@ export default function HomeScreen() {
     transform: [
       { translateX: bubble4.value.x },
       { translateY: bubble4.value.y },
+    ],
+  }));
+
+  const bubble5Style = useAnimatedStyle( () => ({
+    opacity: opacity.value,
+    transform: [
+      { translateX: bubble5.value.x },
+      { translateY: bubble5.value.y },
     ],
   }));
 
@@ -193,6 +204,16 @@ export default function HomeScreen() {
             />
           </TouchableOpacity>
         </Animated.View>
+
+        {/* Bubble 5: Foster Matches (Center)*/}
+        <Animated.View style={[styles.bubble, bubble5Style]} pointerEvents={menuExpanded ? 'auto' : 'none'}>
+          <TouchableOpacity 
+            style={styles.bubbleButton}
+            onPress={() => router.push('/foster-matches')}
+          >
+            <Text> My Fosters </Text>
+          </TouchableOpacity>
+        </Animated.View>        
       </View>
 
       {/* Logout Button */}
