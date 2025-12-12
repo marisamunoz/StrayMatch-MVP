@@ -34,6 +34,9 @@ export default function FosterApplicationScreen() {
   const [references, setReferences] = useState('');
   const [hasCriminalHistory, setHasCriminalHistory] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');  
+  const [address, setAddress] = useState('');
 
   // Show cute loading animation on mount
   useEffect(() => {
@@ -115,6 +118,9 @@ export default function FosterApplicationScreen() {
         .from('foster_applications')
         .insert([{
           user_id: user.id,
+          full_name: fullName,
+          phoneNumber: phoneNumber,
+          address: address,
           home_type: homeType,
           has_yard: hasYard,
           has_other_pets: hasOtherPets,
@@ -566,5 +572,13 @@ const styles = StyleSheet.create({
     color: Colors.card,
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  nameArea: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    minHeight: 10,
+    textAlignVertical: 'top',
   },
 });
